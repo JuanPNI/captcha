@@ -299,24 +299,38 @@ def rotate_identify_and_show_image(
         rotated_origin_inner_image = cv2.warpAffine(
             inner_image, mat_rotate, inner_image.shape[:2]
         )
-        inner_mask = cv2.circle(
-            np.zeros(inner_image.shape[:2], dtype=np.uint8),
-            (origin_h // 2, origin_w // 2),
-            height // 2,
-            (255, 255, 255),
-            -1,
-        )
-        outer_mask = set_mask(origin_h // 2, origin_w // 2 - height // 2)
 
-        sad = cv2.add(
-            rotated_origin_inner_image,
-            np.zeros(outer_image.shape, dtype=np.uint8),
-            mask=inner_mask,
-        )
-        sad2 = cv2.add(
-            outer_image, np.zeros(outer_image.shape, dtype=np.uint8), mask=outer_mask
-        )
+        if all([small_circle.endswith('png'), big_circle.endswith('png')]):
+            outer_height, outer_width = outer_image.shape[:2]
+            inner_height, inner_width = rotated_origin_inner_image.shape[:2]
+            x_offset = (outer_width - inner_width) // 2
+            y_offset = (outer_height - inner_height) // 2
+            result_image = np.ones(outer_image.shape, dtype=np.uint8)
+            result_image[y_offset:y_offset + inner_height, x_offset:x_offset + inner_width] = rotated_origin_inner_image
 
-        image_add_view = cv2.add(sad, sad2)
+            image_add_view = cv2.add(
+                outer_image,
+                result_image,
+            )
+        else:
+            inner_mask = cv2.circle(
+                np.zeros(inner_image.shape[:2], dtype=np.uint8),
+                (origin_h // 2, origin_w // 2),
+                height // 2,
+                (255, 255, 255),
+                -1,
+            )
+            outer_mask = set_mask(origin_h // 2, origin_w // 2 - height // 2)
+
+            sad = cv2.add(
+                rotated_origin_inner_image,
+                np.zeros(outer_image.shape, dtype=np.uint8),
+                mask=inner_mask,
+            )
+            sad2 = cv2.add(
+                outer_image, np.zeros(outer_image.shape, dtype=np.uint8), mask=outer_mask
+            )
+
+            image_add_view = cv2.add(sad, sad2)
         cv2.imshow("image_add", image_add_view)
     cv2.waitKey(image_show_time * 1000)
